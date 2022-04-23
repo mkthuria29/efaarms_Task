@@ -1,0 +1,53 @@
+version: "3.7"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    image: efarms-assignment:latest
+    container_name: efarms-assignment
+    command: >
+      /bin/bash -c "
+        uvicorn main:app --host 0.0.0.0 --reload
+      "
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app
+    depends_on:
+      - redis
+      - db
+
+  redis:
+    image: bitnami/redis:6.0
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/bitnami/redis/data
+    environment:
+      - REDIS_PASSWORD=password123
+    depends_on:
+      - redisinsight
+
+  redisinsight:
+    stdin_open: true
+    tty: true
+    restart: "no"
+    image: redislabs/redisinsight:latest
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./data/redis-insight:/bitnami/redis/data
+
+  db:
+    image: postgres:14.2-alpine3.15
+    container_name: efarms_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
